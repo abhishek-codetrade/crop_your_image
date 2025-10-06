@@ -18,18 +18,17 @@ typedef History = ({int undoCount, int redoCount});
 typedef HistoryChangedCallback = void Function(History history);
 
 typedef WillUpdateScale = bool Function(double newScale);
-typedef CornerDotBuilder = Widget Function(
-    double size, EdgeAlignment edgeAlignment);
+typedef CornerDotBuilder =
+    Widget Function(double size, EdgeAlignment edgeAlignment);
 
-typedef CroppingRectBuilder = ViewportBasedRect Function(
-  ViewportBasedRect viewportRect,
-  ImageBasedRect imageRect,
-);
+typedef CroppingRectBuilder =
+    ViewportBasedRect Function(
+      ViewportBasedRect viewportRect,
+      ImageBasedRect imageRect,
+    );
 
-typedef OnMovedCallback = void Function(
-  ViewportBasedRect viewportRect,
-  ImageBasedRect imageRect,
-);
+typedef OnMovedCallback =
+    void Function(ViewportBasedRect viewportRect, ImageBasedRect imageRect);
 
 typedef OverlayBuilder = Widget Function(BuildContext context, Rect rect);
 
@@ -178,16 +177,14 @@ class Crop extends StatelessWidget {
     this.scrollZoomSensitivity = 0.05,
     this.overlayBuilder,
     this.filterQuality = FilterQuality.medium,
-  })  : this.imageParser = imageParser ?? defaultImageParser,
-        this.formatDetector = formatDetector ?? defaultFormatDetector;
+  }) : this.imageParser = imageParser ?? defaultImageParser,
+       this.formatDetector = formatDetector ?? defaultFormatDetector;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (c, constraints) {
-        final newData = MediaQuery.of(c).copyWith(
-          size: constraints.biggest,
-        );
+        final newData = MediaQuery.of(c).copyWith(size: constraints.biggest);
         return MediaQuery(
           data: newData,
           child: _CropEditor(
@@ -353,6 +350,8 @@ class _CropEditorState extends State<_CropEditor> {
               Size(parsed.width, parsed.height),
             );
           });
+          _cropController
+              .completeReadyCompleter(); // update the controller's completer
         }
         _resetCropRect();
         widget.onStatusChanged?.call(CropStatus.ready);
@@ -427,10 +426,7 @@ class _CropEditorState extends State<_CropEditor> {
     );
 
     final format = formatDetector?.call(image);
-    final future = compute(
-      _parseFunc,
-      [widget.imageParser, format, image],
-    );
+    final future = compute(_parseFunc, [widget.imageParser, format, image]);
     _lastComputed = future;
     final parsed = await future;
     // check if Crop is still alive
@@ -525,16 +521,13 @@ class _CropEditorState extends State<_CropEditor> {
     // use compute() not to block UI update
     late CropResult cropResult;
     try {
-      final image = await compute(
-        _cropFunc,
-        [
-          widget.imageCropper,
-          _parsedImageDetail!.image,
-          _readyState.rectToCrop,
-          withCircleShape,
-          _detectedFormat,
-        ],
-      );
+      final image = await compute(_cropFunc, [
+        widget.imageCropper,
+        _parsedImageDetail!.image,
+        _readyState.rectToCrop,
+        withCircleShape,
+        _detectedFormat,
+      ]);
       cropResult = CropSuccess(image);
     } catch (e, trace) {
       cropResult = CropFailure(e, trace);
@@ -559,10 +552,7 @@ class _CropEditorState extends State<_CropEditor> {
       widget.onImageMoved?.call(_readyState.imageRect);
     });
 
-    _applyScale(
-      _baseScale * detail.scale,
-      focalPoint: detail.localFocalPoint,
-    );
+    _applyScale(_baseScale * detail.scale, focalPoint: detail.localFocalPoint);
   }
 
   DateTime? _pointerSignalLastUpdated;
@@ -592,20 +582,14 @@ class _CropEditorState extends State<_CropEditor> {
   }
 
   /// apply scale updated to view state
-  void _applyScale(
-    double nextScale, {
-    Offset? focalPoint,
-  }) {
+  void _applyScale(double nextScale, {Offset? focalPoint}) {
     final allowScale = widget.willUpdateScale?.call(nextScale) ?? true;
     if (!allowScale) {
       return;
     }
 
     setState(() {
-      _viewState = _readyState.scaleUpdated(
-        nextScale,
-        focalPoint: focalPoint,
-      );
+      _viewState = _readyState.scaleUpdated(nextScale, focalPoint: focalPoint);
       widget.onImageMoved?.call(_readyState.imageRect);
     });
   }
@@ -649,8 +633,10 @@ class _CropEditorState extends State<_CropEditor> {
                 Positioned.fromRect(
                   rect: _readyState.cropRect,
                   child: IgnorePointer(
-                    child:
-                        widget.overlayBuilder!(context, _readyState.cropRect),
+                    child: widget.overlayBuilder!(
+                      context,
+                      _readyState.cropRect,
+                    ),
                   ),
                 ),
               IgnorePointer(
@@ -672,9 +658,8 @@ class _CropEditorState extends State<_CropEditor> {
                   child: GestureDetector(
                     onPanStart: (details) =>
                         _historyState.pushHistory(_readyState),
-                    onPanUpdate: (details) => _updateCropRect(
-                      _readyState.moveRect(details.delta),
-                    ),
+                    onPanUpdate: (details) =>
+                        _updateCropRect(_readyState.moveRect(details.delta)),
                     child: Container(
                       width: _readyState.cropRect.width,
                       height: _readyState.cropRect.height,
@@ -691,10 +676,13 @@ class _CropEditorState extends State<_CropEditor> {
                   onPanUpdate: widget.fixCropRect
                       ? null
                       : (details) => _updateCropRect(
-                            _readyState.moveTopLeft(details.delta),
-                          ),
-                  child: widget.cornerDotBuilder
-                          ?.call(dotTotalSize, EdgeAlignment.topLeft) ??
+                          _readyState.moveTopLeft(details.delta),
+                        ),
+                  child:
+                      widget.cornerDotBuilder?.call(
+                        dotTotalSize,
+                        EdgeAlignment.topLeft,
+                      ) ??
                       const DotControl(),
                 ),
               ),
@@ -707,10 +695,13 @@ class _CropEditorState extends State<_CropEditor> {
                   onPanUpdate: widget.fixCropRect
                       ? null
                       : (details) => _updateCropRect(
-                            _readyState.moveTopRight(details.delta),
-                          ),
-                  child: widget.cornerDotBuilder
-                          ?.call(dotTotalSize, EdgeAlignment.topRight) ??
+                          _readyState.moveTopRight(details.delta),
+                        ),
+                  child:
+                      widget.cornerDotBuilder?.call(
+                        dotTotalSize,
+                        EdgeAlignment.topRight,
+                      ) ??
                       const DotControl(),
                 ),
               ),
@@ -723,10 +714,13 @@ class _CropEditorState extends State<_CropEditor> {
                   onPanUpdate: widget.fixCropRect
                       ? null
                       : (details) => _updateCropRect(
-                            _readyState.moveBottomLeft(details.delta),
-                          ),
-                  child: widget.cornerDotBuilder
-                          ?.call(dotTotalSize, EdgeAlignment.bottomLeft) ??
+                          _readyState.moveBottomLeft(details.delta),
+                        ),
+                  child:
+                      widget.cornerDotBuilder?.call(
+                        dotTotalSize,
+                        EdgeAlignment.bottomLeft,
+                      ) ??
                       const DotControl(),
                 ),
               ),
@@ -739,10 +733,13 @@ class _CropEditorState extends State<_CropEditor> {
                   onPanUpdate: widget.fixCropRect
                       ? null
                       : (details) => _updateCropRect(
-                            _readyState.moveBottomRight(details.delta),
-                          ),
-                  child: widget.cornerDotBuilder
-                          ?.call(dotTotalSize, EdgeAlignment.bottomRight) ??
+                          _readyState.moveBottomRight(details.delta),
+                        ),
+                  child:
+                      widget.cornerDotBuilder?.call(
+                        dotTotalSize,
+                        EdgeAlignment.bottomRight,
+                      ) ??
                       const DotControl(),
                 ),
               ),

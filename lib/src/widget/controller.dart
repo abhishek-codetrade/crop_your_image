@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:crop_your_image/src/widget/crop.dart';
@@ -7,8 +8,16 @@ import 'package:flutter/widgets.dart';
 class CropController {
   late CropControllerDelegate _delegate;
 
+  final Completer<void> _isReadyCompleter = Completer<void>();
+
+  /// getter for [_isReadyCompleter]'s future so the developer can update the UI once the Crop UI is rendered
+  Future<void> get onViewReady => _isReadyCompleter.future;
+
   /// setter for [CropControllerDelegate]
   set delegate(CropControllerDelegate value) => _delegate = value;
+
+  /// completes the [_isReadyCompleter] once the UI is Created
+  void completeReadyCompleter() => _isReadyCompleter.complete();
 
   /// crop given image with current configuration
   void crop() => _delegate.onCrop(false);
